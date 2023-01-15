@@ -2,6 +2,9 @@ import React, { useState } from 'react'
 import {AiFillEyeInvisible, AiFillEye} from "react-icons/ai"
 import { Link } from 'react-router-dom'
 import OAuth from '../components/OAuth'
+import {getAuth, signInWithEmailAndPassword} from 'firebase/auth'
+import {toast} from 'react-toastify'
+import { useNavigate } from 'react-router-dom'
 
 const SignIn = () => {
   const [formData, setFormData]=useState({
@@ -17,6 +20,22 @@ const SignIn = () => {
 
   }
   const [showPassword, setShowPassword]= useState(false)
+  
+  const navigate= useNavigate()
+  async function onSubmit(event){
+    event.preventDefault()
+    try{
+      const auth= getAuth()
+      const userCredentials= await signInWithEmailAndPassword(auth, email, password)
+
+      if(userCredentials.user){
+        navigate('/')
+      }
+    }catch(error){
+      console.log(error)
+      toast.error("Couldn't Sign In, try again!")
+    }
+  }
 
   return (
     <section>
@@ -28,7 +47,7 @@ const SignIn = () => {
            className='w-full rounded-2xl' />
         </div>
         <div  className='w-full md:w-[67%] lg:w-[40%] lg:ml-20'>
-          <form>
+          <form onSubmit={onSubmit}>
             <input type='email' id='email'
             value={email} onChange={onChange}
             className='w-full px-4 py-2 text-xl text-gray-700 bg-white border-gray-300 rounded transition ease-in-out mb-6' 
