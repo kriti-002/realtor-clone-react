@@ -3,7 +3,7 @@ import {getAuth, updateProfile} from 'firebase/auth'
 import { useNavigate } from 'react-router'
 import { toast } from 'react-toastify'
 import {db} from '../firebase'
-import { serverTimestamp, setDoc , doc, updateDoc} from 'firebase/firestore'
+import {doc, updateDoc} from 'firebase/firestore'
 
 const Profile = () => {
   const auth= getAuth()
