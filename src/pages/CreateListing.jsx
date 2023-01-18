@@ -1,6 +1,18 @@
 import React, { useState } from 'react'
+import { toast } from 'react-toastify'
+import Spinner from '../components/Spinner'
+import {getStorage, ref, uploadBytesResumable, getDownloadURL} from "firebase/storage";
+import { getAuth } from "firebase/auth"
+import { v4 as uuidv4 } from "uuid"
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { db } from "../firebase";
+import { useNavigate } from "react-router-dom";
 
-const CreateListing = () => {
+export default function CreateListing() {
+    const navigate = useNavigate()
+    const [geolocationEnabled, setGeolocationEnabled]= useState(true)
+    const [loading, setLoading]= useState(false)
+    const auth = getAuth();
     const [formData, setFormData]=useState({
         type: "rent",
         name: "",
@@ -12,20 +24,148 @@ const CreateListing = () => {
         description: "",
         offer: false,
         regularPrice: 0,
-        discountedPrice : 0
+        discountedPrice : 0,
+        latitude: 0,
+        longitude: 0, 
+        images: {}
     })
-    const {type, name, bedrooms, bathrooms, parking, furnished,address, description, offer, regularPrice, discountedPrice} =formData
-    function onChange(){
-        setFormData((prev)=> {prev=(prev==='rent' ? 'sale' : 'rent')})
+    const {type,
+         name,
+        bedrooms,
+        bathrooms,
+        parking,
+        furnished,
+        address,
+        description,
+        offer,
+        regularPrice,
+        discountedPrice,
+    latitude, longitude,
+images} =formData
+
+    function onChange(event){
+        let boolean= null
+        if(event.target.value=== 'true'){
+            boolean= true
+        }
+        if(event.target.value=== 'false'){
+            boolean=false
+        }
+        //file
+        if(event.target.files){
+            setFormData((prev)=>({
+                ...prev,
+                images: event.target.files
+            }))
+        }
+        //boolean or number
+        if(!event.target.files){
+            setFormData((prev)=>({
+                ...prev,
+                [event.target.id]: boolean ?? event.target.value,
+            }))
+        }
     }
 
-  return (
+    async function onSubmit(event){
+        event.preventDefault()
+        setLoading(true)
+        if(+discountedPrice >= +regularPrice){
+            setLoading(false)
+            toast.error('Please fill discounted price less than regular price')
+            return
+        }
+
+        if(images.length > 6){
+            setLoading(false)
+            toast.error('Please add upto 6 photos')
+            return
+        }
+        let geolocation= {}
+        if(geolocationEnabled){
+            geolocation.lat = latitude;
+            geolocation.lng = longitude;
+
+        }
+
+        //store images in db
+        async function storeImage(image){
+            return new Promise((resolve, reject)=>{
+                const storage= getStorage()
+                const filename=`${auth.currentUser.uid}-${image.name}-${uuidv4()}`
+                const storageRef= ref(storage, filename)
+                const uploadTask= uploadBytesResumable(storageRef, image)
+                
+                uploadTask.on("state_changed", (snapshot) => {
+                      // Observe state change events such as progress, pause, and resume
+                      // Get task progress, including the number of bytes uploaded and the total number of bytes to be uploaded
+                      const progress =
+                        (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+                      console.log("Upload is " + progress + "% done")
+                      switch (snapshot.state) {
+                        case "paused":
+                          console.log("Upload is paused")
+                          break
+                        case "running":
+                          console.log("Upload is running")
+                          break
+                        default:
+                            break
+                      }
+                    },
+                    (error) => {
+                      // Handle unsuccessful uploads
+                      reject(error);
+                    },
+                    () => {
+                      // Handle successful uploads on complete
+                      // For instance, get the download URL: https://firebasestorage.googleapis.com/...
+                      getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+                        resolve(downloadURL);
+                      })
+                    }
+                  )
+
+
+            })
+        }
+
+        const imgUrls = await Promise.all(
+            [...images].map((image) => storeImage(image))
+          ).catch((error) => {
+            console.log(error)
+            setLoading(false);
+            toast.error("Images not uploaded");
+            return;
+          });
+        //console.log(imgUrls)
+        const formDataCopy = {
+            ...formData,
+            imgUrls,
+            geolocation,
+            timestamp: serverTimestamp(),
+            userRef: auth.currentUser.uid,
+          };
+          delete formDataCopy.images;
+          !formDataCopy.offer && delete formDataCopy.discountedPrice;
+          delete formDataCopy.latitude;
+          delete formDataCopy.longitude;
+          const docRef = await addDoc(collection(db, "listings"), formDataCopy);
+          setLoading(false);
+          toast.success("Listing created");
+          navigate(`/category/${formDataCopy.type}/${docRef.id}`);
+          
+        }
+
+        if(loading) return <Spinner/> 
+    
+return (
     <main className='max-w-md px-2 mx-auto'>
       <h1 className='text-3xl text-center mt-6 font-bold'>Create a Listing</h1> 
-      <form>
+      <form onSubmit={onSubmit}>
         <p className='text-lg mt-6 font-semibold'>Sell / Rent</p>
         <div className='flex align-center justify-center'>
-            <button type='button' id='type' value='Sale'
+            <button type='button' id='type' value='sale'
             onClick={onChange}
             className={`uppercase font-medium text-sm shadow-md rounded text-center px-7 py-3
             hover:shadow-lg focus:shadow-lg active-shadow-lg transition ease-in-out
@@ -34,7 +174,7 @@ const CreateListing = () => {
             }>
                 Sell
             </button>
-            <button type='button' id='type' value='Sale'
+            <button type='button' id='type' value='rent'
             onClick={onChange} 
             className={`uppercase font-medium text-sm shadow-md rounded text-center px-7 py-3
             hover:shadow-lg focus:shadow-lg active-shadow-lg transition ease-in-out
@@ -69,7 +209,7 @@ const CreateListing = () => {
             
             <div>
                 <p className='text-lg mt-6 font-semibold'>Baths</p>
-                <input type='number' id='baths' value={bathrooms}
+                <input type='number' id='bathrooms' value={bathrooms}
                 onChange={onChange}
                 min='1' max='50' required
                 className='w-full px-4 py-2 text-xl text-gray-700
@@ -131,6 +271,32 @@ const CreateListing = () => {
         rounded transition duration-150 ease-in-out 
         focus:text-gray-700 focus:bg-white focus:border-slate-600
         mb-6'></textarea>
+        {geolocationEnabled && (
+            <div className='flex space-x-6 justify-start mb-6 '>
+                <div>
+                    <p className='text-lg font-semibold'>Latitude</p>
+                    <input type='number' id='latitude' name={latitude}
+                    onChange={onChange}
+                    required 
+                    min='-90' max='90'
+                    className='w-full px-4 py-2 text-xl text-gray-700
+                    bg-white border border-gray-300 rounded 
+                    transition dusration-150 ease-in-out focus:text-gray-700 focus:bg-white focus:border-slate-600
+                    text-center' />
+                </div>
+                <div>
+                    <p className='text-lg font-semibold'>Longitude</p>
+                    <input type='number' id='longitude' name={longitude}
+                    onChange={onChange}
+                    required 
+                    min='-180' max='180'
+                    className='w-full px-4 py-2 text-xl text-gray-700
+                    bg-white border border-gray-300 rounded 
+                    transition dusration-150 ease-in-out focus:text-gray-700 focus:bg-white focus:border-slate-600
+                    text-center' />
+                </div>
+            </div>
+        )}
 
         <p className='text-lg font-semibold'>Description</p>
         <textarea type='text' id='description' value={description}
@@ -183,24 +349,33 @@ const CreateListing = () => {
         
     </div>
        
-    <div className='flex items-center mb-6'>
-        <div>
-        <p className='text-lg mt-6 font-semibold'>Discounted Price</p>
-            <div className='flex w-full justify-center items-center space-x-6'>
-            <input type='number' id='discountedPrice' value={discountedPrice}
-                onChange={onChange}
-                min='1' max='500000' required={offer}
-                className='w-full px-4 py-2 text-xl text-gray-700
-                bg-white border border-gray-300 rounded 
-                transition dusration-150 ease-in-out focus:text-gray-700 focus:bg-white focus:border-slate-600
-                text-center'
+    {offer && (
+          <div className="flex items-center mb-6">
+            <div className="">
+              <p className="text-lg font-semibold">Discounted price</p>
+              <div className="flex w-full justify-center items-center space-x-6">
+                <input
+                  type="number"
+                  id="discountedPrice"
+                  value={discountedPrice}
+                  onChange={onChange}
+                  min="50"
+                  max="400000000"
+                  required={offer}
+                  className="w-full px-4 py-2 text-xl text-gray-700 bg-white border border-gray-300 rounded transition duration-150 ease-in-out focus:text-gray-700 focus:bg-white focus:border-slate-600 text-center"
                 />
-                {offer && (<div><p className='text-md w-full whitespace-nowrap'>Rupee/Month</p></div>)}
+                {type === "rent" && (
+                  <div className="">
+                    <p className="text-md w-full whitespace-nowrap">
+                      $ / Month
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
-                
-        </div>
-        
-    </div>
+          </div>
+        )}
+    
 
     <div className='mb-6'>
         <p className='text-lg font-semibold'>Images</p>
@@ -219,9 +394,7 @@ const CreateListing = () => {
     focus:bg-blue-700 focus:shadow-lg active:bg-blue-800
     active:shadow-lg
     transition duration-150 ease-in-out'>Create Listing</button>
-      </form>
+    </form>
     </main>
-  )
+  );
 }
-
-export default CreateListing
