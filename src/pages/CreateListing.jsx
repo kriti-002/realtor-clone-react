@@ -10,7 +10,7 @@ import { useNavigate } from "react-router-dom";
 
 export default function CreateListing() {
     const navigate = useNavigate()
-    const [geolocationEnabled, setGeolocationEnabled]= useState(true)
+    const [geolocationEnabled, setGeolocationEnabled]= useState(false)
     const [loading, setLoading]= useState(false)
     const auth = getAuth();
     const [formData, setFormData]=useState({
@@ -82,7 +82,7 @@ images} =formData
             return
         }
         let geolocation= {}
-        if(geolocationEnabled){
+        if(geolocationEnabled === false){
             geolocation.lat = latitude;
             geolocation.lng = longitude;
 
@@ -271,7 +271,7 @@ return (
         rounded transition duration-150 ease-in-out 
         focus:text-gray-700 focus:bg-white focus:border-slate-600
         mb-6'></textarea>
-        {geolocationEnabled && (
+        {!geolocationEnabled && (
             <div className='flex space-x-6 justify-start mb-6 '>
                 <div>
                     <p className='text-lg font-semibold'>Latitude</p>
@@ -332,7 +332,7 @@ return (
         
     <div className='flex items-center mb-6'>
         <div>
-        <p className='text-lg mt-6 font-semibold'>Beds</p>
+        <p className='text-lg mt-6 font-semibold'>Regular Price</p>
             <div className='flex w-full justify-center items-center space-x-6'>
             <input type='number' id='regularPrice' value={regularPrice}
                 onChange={onChange}
