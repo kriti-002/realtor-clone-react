@@ -11,6 +11,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import PrivateRoute from "./components/PrivateRoute";
 import CreateListing from "./pages/CreateListing";
 import EditListing from "./pages/EditListing";
+import Listing from "./pages/Listing";
 
 function App() {
   return (
@@ -32,7 +33,7 @@ function App() {
           <Route path='/edit-listing' element={<PrivateRoute />}>
             <Route path='/edit-listing/:listingId' element={<EditListing />}></Route>
           </Route>
-          
+          <Route path='/category/:categoryName/:listingId' element={<Listing />}></Route>
         </Routes>
       </Router>
       <ToastContainer position="bottom-center" autoClose={5000} hideProgressBar={false} newestOnTop={false} closeOnClick

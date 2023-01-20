@@ -311,6 +311,7 @@ return (
                     onChange={onChange}
                     required 
                     min='-90' max='90'
+                    step="any"
                     className='w-full px-4 py-2 text-xl text-gray-700
                     bg-white border border-gray-300 rounded 
                     transition dusration-150 ease-in-out focus:text-gray-700 focus:bg-white focus:border-slate-600
@@ -322,6 +323,7 @@ return (
                     onChange={onChange}
                     required 
                     min='-180' max='180'
+                    step="any"
                     className='w-full px-4 py-2 text-xl text-gray-700
                     bg-white border border-gray-300 rounded 
                     transition dusration-150 ease-in-out focus:text-gray-700 focus:bg-white focus:border-slate-600
