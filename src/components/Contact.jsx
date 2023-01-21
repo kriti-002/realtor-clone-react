@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react'
 import  {getAuth, onAuthStateChanged } from 'firebase/auth'
 import { db } from '../firebase'
 import { toast } from 'react-toastify'
+import { Link } from 'react-router-dom'
 
 
 const Contact = (props) => {
@@ -41,7 +42,13 @@ const Contact = (props) => {
     }, [props.userRef])
     
   return (
-    <>{landlord!== null && (pageState==='Sign in' ? (<p>You need to sign-up/sign-in for contacting the landlord</p>) :(
+    <>{landlord!== null && (pageState==='Sign in' ? (<>
+    <p className='mb-2'>You need to sign-in/sign-up for contacting the landlord</p>
+    <Link to='/sign-in'>
+    <button type='button' className='px-7 py-3 bg-blue-600 text-white text-sm rounded uppercase font-semibold shadow-md hover:bg-blue-700 hover:shadow-lg focus:bg-blue-700 focus:shadow-lg
+                active:bg-blue-800 active:shadow-lg transition duration-150 ease-in-out w-full text-center mb-6'>Sign In</button>
+    </Link>
+    </>) :(
         <div className='flex flex-col w-full mt-10'>
             <p>Contact {landlord.name} for the {props.listing.name.toLowerCase()}</p>
             <div className='mt-3 mb-6'>
