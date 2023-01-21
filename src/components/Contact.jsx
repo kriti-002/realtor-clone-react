@@ -1,11 +1,26 @@
 import { doc, getDoc } from 'firebase/firestore'
 import React, { useEffect, useState } from 'react'
-import { toast } from 'react-toastify'
+import  {getAuth, onAuthStateChanged } from 'firebase/auth'
 import { db } from '../firebase'
+import { toast } from 'react-toastify'
+
 
 const Contact = (props) => {
     const [landlord, setLandlord]= useState(null)
     const [message, setMessage] =useState("")
+    const [pageState, setPageState]= useState("Sign in")
+    const auth= getAuth()
+
+    useEffect(() => {
+      onAuthStateChanged(auth, (user)=>{
+        if(user){
+            setPageState('Profile')
+        }else{
+            setPageState('Sign in')
+        }
+      })
+    }, [auth])
+
     function onChange(e){
         setMessage(e.target.value)
 
@@ -26,7 +41,7 @@ const Contact = (props) => {
     }, [props.userRef])
     
   return (
-    <>{landlord!== null && (
+    <>{landlord!== null && (pageState==='Sign in' ? (<p>You need to sign-up/sign-in for contacting the landlord</p>) :(
         <div className='flex flex-col w-full mt-10'>
             <p>Contact {landlord.name} for the {props.listing.name.toLowerCase()}</p>
             <div className='mt-3 mb-6'>
@@ -41,7 +56,8 @@ const Contact = (props) => {
                 active:bg-blue-800 active:shadow-lg transition duration-150 ease-in-out w-full text-center mb-6'>Send Message</button>
             </a>
         </div>
-    )}</>
+    ))
+    }</>
   )
 }
 
