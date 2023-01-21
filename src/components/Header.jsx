@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 import  {getAuth, onAuthStateChanged } from 'firebase/auth'
+import {RiHomeHeartLine} from 'react-icons/ri'
 
 const Header = () => {
     const location= useLocation()
@@ -25,7 +26,11 @@ const Header = () => {
     <div className='bg-white border-b shadow-sm sticky top-0 z-40'>
         <header className='flex justify-between items-center px-3 max-w-6xl mx-auto'>
             <div>
-                <img src="https://static.rdc.moveaws.com/images/logos/rdc-logo-default.svg" alt="logo" className='h-5 cursor-pointer' onClick={()=>navigate("/")}/>
+                <h1 className='flex justify-center items-center cursor-pointer font-bold text-2xl' onClick={()=>navigate("/")} >
+                    <RiHomeHeartLine className='text-red-700'/>
+                    <span className='text-red-700'>Real</span>
+                    <span className='text-black'>tor.com</span>
+                </h1>
             </div>
             <div>
                 <ul className='flex space-x-10'>
