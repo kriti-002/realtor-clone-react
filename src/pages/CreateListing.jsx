@@ -369,7 +369,7 @@ return (
                 {type === "rent" && (
                   <div className="">
                     <p className="text-md w-full whitespace-nowrap">
-                      $ / Month
+                      Rupee / Month
                     </p>
                   </div>
                 )}
